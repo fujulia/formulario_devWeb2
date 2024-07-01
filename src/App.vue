@@ -6,9 +6,15 @@ const barraCaregamento = ref(1)
 const loading = ref(true)
 const validateData = ref('')
 const data = ref([])
-const user = reactive({
-  nome: 'Júlia',
-  email: '',
+const originalData = {
+  nome: {
+    value: 'Julia',
+    processed: false
+  }, 
+  email: {
+    value: '',
+    processed: false
+  },
   senha: '',
   senhaConfirmacao: '',
   dataNascimento: '',
@@ -22,6 +28,13 @@ const user = reactive({
   hobbies: [],
   linguagemPref: '',
   biografia: ''
+}
+
+const user = reactive({
+  ...originalData
+})
+
+const userFinal = reactive({...originalData
 })
 
 const estados = [
@@ -72,9 +85,13 @@ function mudar() {
   }, 3000)
 }
 
-function progresso(data) {
-  if (data != '') {
-    barraCaregamento.value += 9
+function progresso(data, attr='nome') {  
+  if (!user[attr].processed) {
+    console.log('processar')
+    barraCaregamento.value += 10
+    user[attr].processed = true
+  } else {
+    console.log("Nao processar")
   }
 }
 
@@ -142,8 +159,8 @@ function UploadImagem(e) {
         type="text"
         class="form-control"
         placeholder="Nome completo"
-        v-model="user.nome"
-        @blur="progresso(user.nome)"
+        v-model="user.nome.value"
+        @blur="progresso(user.nome.value, 'nome')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -155,8 +172,8 @@ function UploadImagem(e) {
         type="email"
         class="form-control"
         placeholder="E-mail"
-        v-model="user.email"
-        @blur="progresso(user.email)"
+        v-model="user.email.value"
+        @blur="progresso(user.email.value, 'email')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -171,7 +188,6 @@ function UploadImagem(e) {
         v-model="user.senha"
         @blur="progresso(user.senha)"
         required
-        minlength="8"
       />
       <div v-if="!senhaForte && user.senha != ''" class="invalid-feedback">
         Insira uma senha que inclua letras maiúsculas, minúsculas, caracteres especiais e números.
@@ -188,7 +204,6 @@ function UploadImagem(e) {
         v-model="user.senhaConfirmacao"
         @blur="progresso(user.senhaConfirmacao)"
         required
-        minlength="8"
       />
       <div v-if="!validaSenha && user.senhaConfirmacao != ''" class="invalid-feedback">
         Senha incorreta!
@@ -493,7 +508,7 @@ button {
   background-color: #3300ff;
   padding: 15px;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   margin: 2vh 0 3vh 0;
 }
 
