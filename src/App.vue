@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref,reactive, computed } from 'vue'
 import api from './plugins/axios'
 const mostrarPerfil = ref(false)
 const barraCaregamento = ref(1)
@@ -11,7 +11,7 @@ const userData = {
   processed: false
 }
 
-const user = ({
+const user = reactive({
   nome: {...userData},
   email: {...userData},
   senha: {...userData},
@@ -61,8 +61,10 @@ const estados = [
 ]
 
 const validaSenha = computed(() => {
-  return user.senha == user.senhaConfirmacao
+  return user.senha.value == user.senhaConfirmacao.value
+
 })
+console.log(validaSenha)
 const senhaForte = computed(() => {
   return user.senha.value.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)
 })
@@ -78,8 +80,8 @@ function mudar() {
   }, 3000)
 }
 
-function progresso( attr) {  
-  if (!user[attr].processed) {
+function progresso(attr) {  
+  if (!user[attr].processed & user[attr].value!='') {
     console.log('processar')
     barraCaregamento.value += (100/11)
     user[attr].processed = true
@@ -195,10 +197,10 @@ function UploadImagem(e) {
         class="form-control"
         placeholder="Confirme a senha"
         v-model="user.senhaConfirmacao.value"
-        @blur="progresso('senhaConfirmacao')"
+        @blur="progresso('senhaConfirmacao'); validaSenha()"
         required
       />
-      <div v-if="!validaSenha && user.senhaConfirmacao != ''" class="invalid-feedback">
+      <div v-if="validaSenha == false || user.senhaConfirmacao.value != ''" class="invalid-feedback">
         Senha incorreta!
       </div>
       <div v-else class="invalid-feedback">Obrigatório</div>
