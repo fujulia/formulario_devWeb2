@@ -60,10 +60,10 @@ const estados = [
   { uf: 'TO', name: 'Tocantins' }
 ]
 
-const validaSenha = computed(() => {
-  return user.senha.value == user.senhaConfirmacao.value
+const validaSenha = computed(() => 
+  user.senha.value == user.senhaConfirmacao.value?'is-valid':'is-invalid' 
+)
 
-})
 console.log(validaSenha)
 const senhaForte = computed(() => {
   return user.senha.value.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)
@@ -162,7 +162,7 @@ function UploadImagem(e) {
     </div>
     <div class="form-group">
       <label>E-mail*</label>
-      <input
+      <input 
         id="validationCustom02"
         type="email"
         class="form-control"
@@ -194,16 +194,13 @@ function UploadImagem(e) {
       <input
         id="validationCustom04"
         type="password"
-        class="form-control"
+        class="form-control" :class="validaSenha"
         placeholder="Confirme a senha"
         v-model="user.senhaConfirmacao.value"
-        @blur="progresso('senhaConfirmacao'); validaSenha()"
-        required
+        @blur="progresso('senhaConfirmacao')"
+        required 
       />
-      <div v-if="validaSenha == false || user.senhaConfirmacao.value != ''" class="invalid-feedback">
-        Senha incorreta!
-      </div>
-      <div v-else class="invalid-feedback">Obrigatório</div>
+      <div v-if="!validaSenha">ERRADO</div>
     </div>
     <div class="form-group">
       <label>Data de nascimento*</label>
