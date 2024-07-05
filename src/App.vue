@@ -1,41 +1,34 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import api from './plugins/axios'
 const mostrarPerfil = ref(false)
 const barraCaregamento = ref(1)
 const loading = ref(true)
 const validateData = ref('')
 const data = ref([])
-const originalData = {
-  nome: {
-    value: 'Julia',
-    processed: false
-  }, 
-  email: {
-    value: '',
-    processed: false
-  },
-  senha: '',
-  senhaConfirmacao: '',
-  dataNascimento: '',
-  cep: '',
-  estado: '',
-  cidade: '',
-  bairro: '',
-  rua: '',
-  num: '',
+const userData = {
+  value: '',
+  processed: false
+}
+
+const user = ({
+  nome: {...userData},
+  email: {...userData},
+  senha: {...userData},
+  senhaConfirmacao: {...userData},
+  dataNascimento: {...userData},
+  cep: {...userData},
+  estado: {...userData},
+  cidade: {...userData},
+  bairro: {...userData},
+  rua: {...userData},
+  num: {...userData},
   fotoPerfil: '',
   hobbies: [],
   linguagemPref: '',
   biografia: ''
-}
-
-const user = reactive({
-  ...originalData
 })
 
-const userFinal = reactive({...originalData
-})
 
 const estados = [
   { uf: 'AC', name: 'Acre' },
@@ -71,7 +64,7 @@ const validaSenha = computed(() => {
   return user.senha == user.senhaConfirmacao
 })
 const senhaForte = computed(() => {
-  return user.senha.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)
+  return user.senha.value.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)
 })
 
 function enviarForm() {
@@ -85,10 +78,10 @@ function mudar() {
   }, 3000)
 }
 
-function progresso(data, attr='nome') {  
+function progresso( attr) {  
   if (!user[attr].processed) {
     console.log('processar')
-    barraCaregamento.value += 10
+    barraCaregamento.value += (100/11)
     user[attr].processed = true
   } else {
     console.log("Nao processar")
@@ -97,11 +90,11 @@ function progresso(data, attr='nome') {
 
 async function buscarCep() {
   try {
-    const response = await api.get(`/ws/${user.cep}/json/`)
+    const response = await api.get(`/ws/${user.cep.value}/json/`)
     data.value = response.data
-    user.cidade = data.value.localidade
-    user.rua = data.value.logradouro
-    user.bairro = data.value.bairro
+    user.cidade.value = data.value.localidade
+    user.rua.value = data.value.logradouro
+    user.bairro.value = data.value.bairro
     barraCaregamento.value += 36
     console.log(data.value)
   } catch (error) {
@@ -130,9 +123,9 @@ function UploadImagem(e) {
         <div id="fotoPerfil"><img v-if="user.fotoPerfil" :src="user.fotoPerfil" /></div>
       </div>
       <h1 class="w-100 mt-3" id="perfilTitulo">Perfil Criado!</h1>
-      <h2 class="w-100 p-2 text-center fs-3">Bem vindo(a) {{ user.nome }}</h2>
+      <h2 class="w-100 p-2 text-center fs-3">Bem vindo(a) {{ user.nome.value }}</h2>
       <div class="w-75 m-auto info">
-        <p v-for="(value, key) in user" :key="key">{{ key }} : {{ value }}</p>
+        <p v-for="(value, key) in user" :key="key">{{ key }} : {{ value.value }}</p>
       </div>
       <div class="w-75 m-auto">
         <button class="btn btn-outline" @click="mostrarPerfil = false">Voltar</button>
@@ -160,7 +153,7 @@ function UploadImagem(e) {
         class="form-control"
         placeholder="Nome completo"
         v-model="user.nome.value"
-        @blur="progresso(user.nome.value, 'nome')"
+        @blur="progresso('nome')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -173,7 +166,7 @@ function UploadImagem(e) {
         class="form-control"
         placeholder="E-mail"
         v-model="user.email.value"
-        @blur="progresso(user.email.value, 'email')"
+        @blur="progresso('email')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -185,8 +178,8 @@ function UploadImagem(e) {
         type="password"
         class="form-control"
         placeholder="Senha"
-        v-model="user.senha"
-        @blur="progresso(user.senha)"
+        v-model="user.senha.value"
+        @blur="progresso('senha')"
         required
       />
       <div v-if="!senhaForte && user.senha != ''" class="invalid-feedback">
@@ -201,8 +194,8 @@ function UploadImagem(e) {
         type="password"
         class="form-control"
         placeholder="Confirme a senha"
-        v-model="user.senhaConfirmacao"
-        @blur="progresso(user.senhaConfirmacao)"
+        v-model="user.senhaConfirmacao.value"
+        @blur="progresso('senhaConfirmacao')"
         required
       />
       <div v-if="!validaSenha && user.senhaConfirmacao != ''" class="invalid-feedback">
@@ -216,8 +209,8 @@ function UploadImagem(e) {
         id="validationCustom05"
         type="date"
         class="form-control"
-        v-model="user.dataNascimento"
-        @blur="progresso(user.dataNascimento)"
+        v-model="user.dataNascimento.value"
+        @blur="progresso('dataNascimento')"
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
@@ -228,7 +221,7 @@ function UploadImagem(e) {
         type="text"
         class="form-control"
         placeholder="00000-000"
-        v-model="user.cep"
+        v-model="user.cep.value"
         @blur="buscarCep()"
         required
         maxlength="8"
@@ -238,8 +231,8 @@ function UploadImagem(e) {
     </div>
     <div class="form-group">
       <label>Estado*</label>
-      <select id="validationCustom07" name="" class="form-select" required v-model="user.estado">
-        <option selected>Selecione</option>
+      <select id="validationCustom07" name="" class="form-select" required v-model="user.estado.value">
+        <option selected disabled value="">Selecionar...</option>
         <option v-for="estado of estados" :key="estado.uf" :value="estado.name">
           {{ estado.uf }}
         </option>
@@ -253,7 +246,7 @@ function UploadImagem(e) {
         type="text"
         class="form-control"
         placeholder="Cidade"
-        v-model="user.cidade"
+        v-model="user.cidade.value"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -265,7 +258,7 @@ function UploadImagem(e) {
         type="text"
         class="form-control"
         placeholder="Rua"
-        v-model="user.rua"
+        v-model="user.rua.value"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
@@ -278,7 +271,7 @@ function UploadImagem(e) {
           type="text"
           class="form-control"
           placeholder="Bairro"
-          v-model="user.bairro"
+          v-model="user.bairro.value"
           required
         />
         <div class="invalid-feedback">Obrigatório</div>
@@ -290,7 +283,7 @@ function UploadImagem(e) {
           type="text"
           class="form-control"
           placeholder="N°"
-          v-model="user.num"
+          v-model="user.num.value"
           @blur="progresso(user.num)"
           required
         />
