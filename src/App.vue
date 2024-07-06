@@ -1,36 +1,38 @@
 <script setup>
 import { ref,reactive, computed } from 'vue'
 import api from './plugins/axios'
-const mostrarPerfil = ref(false)
-const barraCaregamento = ref(1)
+const showProfile = ref(false)
+const loadingBar = ref(1)
 const loading = ref(true)
 const validateData = ref('')
-const data = ref([])
+const dataCep = ref([])
 const userData = {
   value: '',
   processed: false
 }
 
 const user = reactive({
-  nome: {...userData},
+  name: {...userData},
   email: {...userData},
-  senha: {...userData},
-  senhaConfirmacao: {...userData},
-  dataNascimento: {...userData},
+  password: {...userData},
+  passwordConfirmation: {...userData},
+  dateOfBirth : {...userData},
   cep: {...userData},
-  estado: {...userData},
-  cidade: {...userData},
-  bairro: {...userData},
-  rua: {...userData},
-  num: {...userData},
-  fotoPerfil: '',
-  hobbies: [],
-  linguagemPref: '',
-  biografia: ''
+  state: {...userData},
+  city: {...userData},
+  neighborhood: {...userData},
+  street: {...userData},
+  number: {...userData},
+  profilePicture: {...userData},
+  hobbies: {
+    value:[]
+  },
+  favoriteLanguage: {...userData},
+  biography: {...userData}
 })
 
 
-const estados = [
+const states = [
   { uf: 'AC', name: 'Acre' },
   { uf: 'AL', name: 'Alagoas' },
   { uf: 'AP', name: 'Amapá' },
@@ -60,81 +62,80 @@ const estados = [
   { uf: 'TO', name: 'Tocantins' }
 ]
 
-const validaSenha = computed(() => 
-  user.senha.value == user.senhaConfirmacao.value?'is-valid':'is-invalid' 
+const validatePassword = computed(() => {
+  return user.password.value == user.passwordConfirmation.value?'is-valid':'is-invalid' }
 )
 
-console.log(validaSenha)
-const senhaForte = computed(() => {
-  return user.senha.value.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)
+const strongPassword = computed(() => {
+  return user.password.value.match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$*&@#])[0-9a-zA-Z$*&@#]{8,}$/)?'is-valid':'is-invalid'
 })
 
-function enviarForm() {
-  mostrarPerfil.value = true
-  mudar()
+function sendForm() {
+  showProfile.value = true
+  changeLoadingState()
 }
 
-function mudar() {
+function UploadImage(e) {
+  const target = e.target
+  if (target && target.files) {
+    const file = target.files[0]
+    user.profilePicture.value = URL.createObjectURL(file)
+  }
+}
+// animação
+function changeLoadingState() {
   setTimeout(() => {
     loading.value = false
   }, 3000)
 }
-
-function progresso(attr) {  
+// barra de progresso
+function progress(attr) {  
   if (!user[attr].processed & user[attr].value!='') {
     console.log('processar')
-    barraCaregamento.value += (100/11)
+    loadingBar.value += (100/13)
     user[attr].processed = true
   } else {
     console.log("Nao processar")
   }
 }
-
-async function buscarCep() {
+// buscar cep
+async function searchCep() {
   try {
     const response = await api.get(`/ws/${user.cep.value}/json/`)
-    data.value = response.data
-    user.cidade.value = data.value.localidade
-    user.rua.value = data.value.logradouro
-    user.bairro.value = data.value.bairro
-    barraCaregamento.value += 36
-    console.log(data.value)
+    dataCep.value = response.data
+    user.city.value = dataCep.value.localidade
+    user.street.value = dataCep.value.logradouro
+    user.neighborhood.value = dataCep.value.bairro
+    loadingBar.value += 36
+    console.log(dataCep.value)
   } catch (error) {
     console.log(error)
-  }
-}
-
-function UploadImagem(e) {
-  const target = e.target
-  if (target && target.files) {
-    const file = target.files[0]
-    user.fotoPerfil = URL.createObjectURL(file)
   }
 }
 </script>
 
 <template>
-  <section v-if="mostrarPerfil">
+  <section v-if="showProfile">
     <div class="loading" v-if="loading">
-      <div class="spinner-grow m-2 corLilas"></div>
-      <div class="spinner-grow m-2" id="corRoxa"></div>
-      <div class="spinner-grow m-2 corLilas"></div>
+      <div class="spinner-grow m-2 colorLilac"></div>
+      <div class="spinner-grow m-2 colorPurple"></div>
+      <div class="spinner-grow m-2 colorLilac"></div>
     </div>
     <div v-else class="contentInfo">
       <div class="d-flex justify-content-center mt-4">
-        <div id="fotoPerfil"><img v-if="user.fotoPerfil" :src="user.fotoPerfil" /></div>
+        <div class="profilePicture"><img v-if="user.profilePicture.value" :src="user.profilePicture.value" /></div>
       </div>
-      <h1 class="w-100 mt-3" id="perfilTitulo">Perfil Criado!</h1>
-      <h2 class="w-100 p-2 text-center fs-3">Bem vindo(a) {{ user.nome.value }}</h2>
+      <h1 class="w-100 mt-3 profileTitle">Perfil Criado!</h1>
+      <h2 class="w-100 p-2 text-center fs-3">Bem vindo(a) {{ user.name.value }}</h2>
       <div class="w-75 m-auto info">
         <p v-for="(value, key) in user" :key="key">{{ key }} : {{ value.value }}</p>
       </div>
       <div class="w-75 m-auto">
-        <button class="btn btn-outline" @click="mostrarPerfil = false">Voltar</button>
+        <button class="btn btn-outline" @click="showProfile = false">Voltar</button>
       </div>
     </div>
   </section>
-  <form v-else @submit="enviarForm()" :class="[validateData]" validate>
+  <form v-else @submit="sendForm()" :class="[validateData]" validate>
     <div
       class="progress mt-2 mb-5 sticky-top"
       role="progressbar"
@@ -143,85 +144,84 @@ function UploadImagem(e) {
       aria-valuemin="0"
       aria-valuemax="100"
     >
-      <div class="progress-bar m-0" :style="{ width: barraCaregamento + '%' }"></div>
+      <div class="progress-bar m-0" :style="{ width: loadingBar + '%' }"></div>
     </div>
 
-    <div id="titulo" class="m-0"><h1>Faça Seu Cadastro</h1></div>
+    <div class="m-0 title"><h1>Faça Seu Cadastro</h1></div>
     <div class="form-group">
-      <label>Nome completo*</label>
+      <label for="name" >Nome completo*</label>
       <input
-        id="validationCustom01"
+        id="name"
         type="text"
         class="form-control"
         placeholder="Nome completo"
-        v-model="user.nome.value"
-        @blur="progresso('nome')"
+        v-model="user.name.value"
+        @blur="progress('name')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>E-mail*</label>
+      <label for="email">E-mail*</label>
       <input 
-        id="validationCustom02"
+        id="email"
         type="email"
         class="form-control"
         placeholder="E-mail"
         v-model="user.email.value"
-        @blur="progresso('email')"
+        @blur="progress('email')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>Senha*</label>
+      <label for="password">Senha*</label>
       <input
-        id="validationCustom03"
+        id="password"
         type="password"
-        class="form-control"
+        class="form-control" :class="strongPassword"
         placeholder="Senha"
-        v-model="user.senha.value"
-        @blur="progresso('senha')"
+        v-model="user.password.value"
+        @blur="progress('password')"
         required
       />
-      <div v-if="!senhaForte && user.senha != ''" class="invalid-feedback">
+      <div class="invalid-feedback">
         Insira uma senha que inclua letras maiúsculas, minúsculas, caracteres especiais e números.
       </div>
-      <div v-else class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>Confirme a senha*</label>
+      <label for="passwordConfirmation">Confirme a senha*</label>
       <input
-        id="validationCustom04"
+        id="passwordConfirmation"
         type="password"
-        class="form-control" :class="validaSenha"
+        class="form-control" :class="validatePassword"
         placeholder="Confirme a senha"
-        v-model="user.senhaConfirmacao.value"
-        @blur="progresso('senhaConfirmacao')"
+        v-model="user.passwordConfirmation.value"
+        @blur="progress('passwordConfirmation')"
         required 
       />
-      <div v-if="!validaSenha">ERRADO</div>
+      <div class="invalid-feedback">Senha incorreta, tente novamente</div>
     </div>
     <div class="form-group">
-      <label>Data de nascimento*</label>
+      <label for="dataOfBirth">Data de nascimento*</label>
       <input
-        id="validationCustom05"
+        id="dataOfBirth"
         type="date"
         class="form-control"
-        v-model="user.dataNascimento.value"
-        @blur="progresso('dataNascimento')"
+        v-model="user.dateOfBirth.value"
+        @blur="progress('dateOfBirth')"
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>CEP*</label>
+      <label for="cep">CEP*</label>
       <input
-        id="validationCustom06"
+        id="cep"
         type="text"
         class="form-control"
-        placeholder="00000-000"
+        placeholder="00000000"
         v-model="user.cep.value"
-        @blur="buscarCep()"
+        @blur="searchCep()"
         required
         maxlength="8"
         minlength="8"
@@ -229,61 +229,64 @@ function UploadImagem(e) {
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>Estado*</label>
-      <select id="validationCustom07" name="" class="form-select" required v-model="user.estado.value">
+      <label for="state">Estado*</label>
+      <select id="state" name="" class="form-select" required v-model="user.state.value" @blur="progress('state')">
         <option selected disabled value="">Selecionar...</option>
-        <option v-for="estado of estados" :key="estado.uf" :value="estado.name">
-          {{ estado.uf }}
+        <option v-for="state of states" :key="state.uf" :value="state.name">
+          {{ state.uf }}
         </option>
       </select>
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>Cidade*</label>
+      <label for="city">Cidade*</label>
       <input
-        id="validationCustom08"
+        id="city"
         type="text"
         class="form-control"
         placeholder="Cidade"
-        v-model="user.cidade.value"
+        v-model="user.city.value"
+        @blur="progress('city')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="form-group">
-      <label>Rua*</label>
+      <label for="street">Rua*</label>
       <input
-        id="validationCustom09"
+        id="street"
         type="text"
         class="form-control"
         placeholder="Rua"
-        v-model="user.rua.value"
+        v-model="user.street.value"
+        @blur="progress('street')"
         required
       />
       <div class="invalid-feedback">Obrigatório</div>
     </div>
     <div class="row">
       <div class="form-group col-8 m-0">
-        <label>Bairro*</label>
+        <label for="neighborhood">Bairro*</label>
         <input
-          id="validationCustom10"
+          id="neighborhood"
           type="text"
           class="form-control"
           placeholder="Bairro"
-          v-model="user.bairro.value"
+          v-model="user.neighborhood.value"
+          @blur="progress('neighborhood')"
           required
         />
         <div class="invalid-feedback">Obrigatório</div>
       </div>
       <div class="form-group col-4 m-0">
-        <label>N°*</label>
+        <label for="number">N°*</label>
         <input
-          id="validationCustom11"
+          id="number"
           type="text"
           class="form-control"
           placeholder="N°"
-          v-model="user.num.value"
-          @blur="progresso(user.num)"
+          v-model="user.number.value"
+          @blur="progress('number')"
           required
         />
         <div class="invalid-feedback">Obrigatório</div>
@@ -291,18 +294,18 @@ function UploadImagem(e) {
     </div>
     <div class="mb-3">
       <label for="formFile" class="form-label">Foto de perfil - Opcional</label>
-      <input class="form-control" type="file" id="formFile" @change="UploadImagem($event)" />
+      <input class="form-control" type="file" id="formFile" @change="UploadImage($event)" @blur="progress('profilePicture')" />
     </div>
     <div class="form-group">
-      <label>Biografia - Opcional</label>
+      <label for="biography">Biografia - Opcional</label>
       <textarea
-        name="biografia"
-        id=""
+        name="biography"
+        id="biography"
         rows="8"
         class="form-control"
         placeholder="Escreva sobre você"
-        v-model="user.biografia"
-        @blur="progresso(user.biografia)"
+        v-model="user.biography.value"
+        @blur="progress('biography')"
       ></textarea>
     </div>
     <div class="form-group d-flex flex-column">
@@ -311,36 +314,39 @@ function UploadImagem(e) {
         <input
           class="form-check-input m-0"
           type="checkbox"
-          v-model="user.hobbies"
+          v-model="user.hobbies.value"
           value="esporte"
+          id="esporte"
         />
-        <label for="" class="ms-2 checkbox">Esportes</label>
+        <label for="esporte" class="ms-2 checkbox">Esportes</label>
       </div>
       <div class="m-3">
-        <input class="form-check-input m-0" type="checkbox" v-model="user.hobbies" value="música" />
-        <label for="" class="ms-2 checkbox">Música</label>
+        <input class="form-check-input m-0" type="checkbox" v-model="user.hobbies.value" value="música" id="musica" />
+        <label for="musica" class="ms-2 checkbox">Música</label>
       </div>
       <div class="m-3">
         <input
           class="form-check-input m-0"
           type="checkbox"
-          v-model="user.hobbies"
+          v-model="user.hobbies.value"
           value="viagens"
+          id="viagens"
         />
-        <label for="" class="ms-2 checkbox">Viagens</label>
+        <label for="viagens" class="ms-2 checkbox">Viagens</label>
       </div>
       <div class="m-3">
         <input
           class="form-check-input m-0"
           type="checkbox"
-          v-model="user.hobbies"
+          v-model="user.hobbies.value"
           value="leitura"
+          id="leitura"
         />
-        <label for="" class="ms-2 checkbox">Leitura</label>
+        <label for="leitura" class="ms-2 checkbox">Leitura</label>
       </div>
       <div class="m-3">
-        <input class="form-check-input m-0" type="checkbox" v-model="user.hobbies" value="Outro" />
-        <label for="" class="ms-2 checkbox">Outro</label>
+        <input class="form-check-input m-0" type="checkbox" v-model="user.hobbies.value" value="Outro" id="outro" />
+        <label for="outro" class="ms-2 checkbox">Outro</label>
       </div>
     </div>
     <div class="form-group">
@@ -351,7 +357,7 @@ function UploadImagem(e) {
           type="radio"
           name="flexRadioDefault"
           id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          v-model="user.favoriteLanguage.value"
           value="javascript"
         />
         <label class="form-check-label ms-2 radio" for="flexRadioDefault1">Javascript</label>
@@ -361,55 +367,55 @@ function UploadImagem(e) {
           class="form-check-input m-0"
           type="radio"
           name="flexRadioDefault"
-          id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          id="flexRadioDefault2"
+          v-model="user.favoriteLanguage.value"
           value="python"
         />
-        <label class="form-check-label ms-2 radio" for="flexRadioDefault1"> Python</label>
+        <label class="form-check-label ms-2 radio" for="flexRadioDefault2"> Python</label>
       </div>
       <div class="form-check m-4">
         <input
           class="form-check-input m-0"
           type="radio"
           name="flexRadioDefault"
-          id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          id="flexRadioDefault3"
+          v-model="user.favoriteLanguage.value"
           value="C"
         />
-        <label class="form-check-label ms-2 radio" for="flexRadioDefault1">C</label>
+        <label class="form-check-label ms-2 radio" for="flexRadioDefault3">C</label>
       </div>
       <div class="form-check m-4">
         <input
           class="form-check-input m-0"
           type="radio"
           name="flexRadioDefault"
-          id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          id="flexRadioDefault4"
+          v-model="user.favoriteLanguage.value"
           value="PHP"
         />
-        <label class="form-check-label ms-2 radio" for="flexRadioDefault1">PHP</label>
+        <label class="form-check-label ms-2 radio" for="flexRadioDefault4">PHP</label>
       </div>
       <div class="form-check m-4">
         <input
           class="form-check-input m-0"
           type="radio"
           name="flexRadioDefault"
-          id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          id="flexRadioDefault5"
+          v-model="user.favoriteLanguage.value"
           value="C++"
         />
-        <label class="form-check-label ms-2 radio" for="flexRadioDefault1"> C++</label>
+        <label class="form-check-label ms-2 radio" for="flexRadioDefault5"> C++</label>
       </div>
       <div class="form-check m-4">
         <input
           class="form-check-input m-0"
           type="radio"
           name="flexRadioDefault"
-          id="flexRadioDefault1"
-          v-model="user.linguagemPref"
+          id="flexRadioDefault6"
+          v-model="user.favoriteLanguage.value"
           value="outra"
         />
-        <label class="form-check-label ms-2 radio" for="flexRadioDefault1"> Outra </label>
+        <label class="form-check-label ms-2 radio" for="flexRadioDefault6"> Outra </label>
       </div>
     </div>
 
@@ -433,16 +439,17 @@ form div {
   background-color: #5bff76;
 }
 
-#titulo {
+.title {
   width: 100%;
   display: flex;
   justify-content: center;
   margin-bottom: 4vh;
 }
 
-#perfilTitulo {
+.profileTitle {
   font-size: 30px;
 }
+
 h1 {
   width: 5em;
   text-align: center;
@@ -462,6 +469,7 @@ select,
 .form-control::file-selector-button {
   color: #595c5f;
 }
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -469,6 +477,7 @@ select:focus {
   box-shadow: 0 0 0 0.2rem rgba(125, 95, 245, 0.425);
   border: 1px solid #7d5ff5;
 }
+
 label,
 h2 {
   color: #7d5ff5;
@@ -480,6 +489,7 @@ h2 {
   background-color: #3300ff;
   border: 1px solid #3300ff;
 }
+
 .checkbox,
 .radio,
 .was-validated .form-check-input:valid ~ .form-check-label {
@@ -509,7 +519,7 @@ button:hover {
   color: white;
 }
 
-#fotoPerfil img {
+.profilePicture img {
   width: 150px;
   height: 150px;
   border-radius: 50%;
@@ -519,7 +529,7 @@ section {
   word-wrap: break-word;
 }
 
-@keyframes aparecer {
+@keyframes emerge{
   0% {
     opacity: 0;
   }
@@ -530,8 +540,9 @@ section {
 }
 
 .contentInfo {
-  animation: aparecer 1.8s;
+  animation: emerge 1.8s;
 }
+
 .loading {
   width: 100%;
   height: 100%;
@@ -540,11 +551,11 @@ section {
   align-items: center;
   justify-content: center;
 }
-.corLilas {
+.colorLilac {
   color: #7d5ff5;
 }
 
-#corRoxa {
+.colorPurple {
   color: #3300ff;
 }
 .spinner-grow {
@@ -559,6 +570,7 @@ section {
 .was-validated .form-check-input:valid:checked {
   background-color: #3300ff;
 }
+
 .invalid-feedback {
   margin-top: 10px;
 }
